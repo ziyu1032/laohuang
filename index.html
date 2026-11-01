@@ -141,8 +141,9 @@ body{
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
 .talkwrap{display:flex;gap:12px;align-items:center}
 .talk{
-  flex:1;min-height:96px;border:none;border-radius:26px;cursor:pointer;
-  font-family:inherit;font-size:var(--fs-btn);font-weight:800;letter-spacing:.06em;
+  display:block;width:100%;min-height:132px;touch-action:none;user-select:none;-webkit-user-select:none;
+  -webkit-touch-callout:none;border:none;border-radius:26px;cursor:pointer;
+  font-family:inherit;font-size:calc(var(--fs-btn) + 6px);font-weight:800;letter-spacing:.14em;
   color:#fff;background:var(--green);
   box-shadow:0 8px 22px rgba(71,98,76,.28);
   display:flex;align-items:center;justify-content:center;gap:14px;
@@ -152,6 +153,13 @@ body{
 .talk.rec{background:var(--clay);box-shadow:0 8px 26px rgba(181,80,47,.36)}
 .talk.rec .mic{animation:blink 1s infinite}
 .mic{width:26px;height:26px;flex:0 0 26px}
+.talkhint{text-align:center;color:var(--ink-faint);font-size:var(--fs-m);margin-top:12px;min-height:1.7em}
+.help{display:block;margin:6px auto 0;background:none;border:none;color:var(--ink-faint);
+  font-family:inherit;font-size:calc(var(--fs-m) - 2px);text-decoration:underline;cursor:pointer;padding:10px}
+.helper{margin-top:10px;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:14px}
+.helper[hidden]{display:none}
+.helper input{width:100%;font-family:inherit;font-size:var(--fs-m);padding:13px 14px;
+  border-radius:12px;border:1.5px solid var(--line);background:#FDFBF7;margin-top:12px;color:var(--ink)}
 .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 .chip{
   font-family:inherit;font-size:var(--fs-m);font-weight:700;
@@ -269,20 +277,19 @@ body{
       <span style="margin-left:auto;opacity:.65;font-weight:400">点此关闭</span>
     </div>
     <div class="composer">
-      <div class="langbar">
-        <button class="langchip" id="langChip">潮阳话</button>
+      <button class="talk" id="btnTalk" aria-label="按住说话">
+        <svg class="mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/>
+        </svg>
+        <span id="talkLabel">按住 说 话</span>
+      </button>
+      <div class="talkhint" id="talkHint">说完松手就好</div>
+      <button class="help" id="btnHelp">听不清？叫家人帮忙</button>
+      <div class="helper" id="helper" hidden>
+        <div class="chips" id="chips"></div>
+        <input type="text" id="typeBox" placeholder="家人代打字，按回车发送">
+        <button class="endlink" id="btnEnd">今日就聊到这</button>
       </div>
-      <div class="listenpill" id="listenPill"><span class="rec-dot"></span><span id="listenTxt">我在听 · 点此暂停</span></div>
-      <div class="talkwrap">
-        <button class="talk" id="btnTalk">
-          <svg class="mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/>
-          </svg>
-          <span id="talkLabel">按一下，说话</span>
-        </button>
-      </div>
-      <div class="chips" id="chips"></div>
-      <button class="endlink" id="btnEnd">今日就聊到这</button>
     </div>
   </section>
 
@@ -422,7 +429,7 @@ const saveCard = () => localStorage.setItem(KEY.card, JSON.stringify([...unlocke
 const POOLS = {
   greet:[
     {d:'{T}，汝好。我正来，坐坐。', m:'{T}，你好。我刚到，坐坐。'},
-    {d:'食饱未？日头暖，出来晒晒。', m:'吃过了吗？太阳暖，出来晒晒。'},
+    {d:'坐只块，日头暖，阮来讲古。', m:'坐这儿，太阳暖，咱们聊聊天。'},
     {d:'老兄弟，几日无见，汝面色真好。', m:'老兄弟，几天没见，你气色真好。'},
     {d:'我坐只块，汝慢慢讲，无急。', m:'我坐这儿，你慢慢讲，不急。'}
   ],
@@ -909,7 +916,7 @@ function say(item, echo){
     ? { main: dTxt, sub: mTxt }      // 潮阳话大字 + 普通话小字
     : { main: mTxt, sub: '' };       // 纯普通话
   setTimeout(()=>{
-    if(listening) stopRecog();
+    if(listening) stopListen();
     addMsg('', 'you', shown);
     if(item.c) unlockCard(item.c);
     resetSilence();
@@ -922,88 +929,129 @@ function resetSilence(){
   clearTimeout(silenceTimer);
   silenceTimer = setTimeout(()=>{
     if(!$('#s-chat').classList.contains('active')) return;
+    if(listening || holding) { resetSilence(); return; }
     const it = pick('silence');
     if(it){ addMsg('', 'you', {d:fill(it.d), m:fill(it.m)}); speak(fill(it.m)); resetSilence(); }
   }, 52000);
 }
 
-/* ---------------- 语音识别 ---------------- */
+/* ---------------- 语音：按住说话（对讲机手感） ---------------- */
+let buf = '', silenceT = null, resumeTimer = null, holding = false, pressAt = 0;
+
+function vibrate(ms){ try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} }
+function setLabel(t){ const el = document.getElementById('talkLabel'); if(el) el.textContent = t; }
+function btnVoiceOn(on){
+  const b = document.getElementById('btnTalk'); if(b) b.classList.toggle('rec', on);
+  const d = document.getElementById('liveDot'); if(d) d.style.background = on ? '#C24B3A' : '#7DA87F';
+  setHint(on ? '我在听，说完松手' : '说完松手就好');
+}
+function setHint(t){ const el = document.getElementById('talkHint'); if(el) el.textContent = t; }
+
 function initRecog(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){ recogSupported=false; return; }
+  if(!SR){ recogSupported = false; return; }
   recogSupported = true;
   recog = new SR();
   recog.lang = 'zh-CN';
-  recog.continuous = false;
+  recog.continuous = true;
   recog.interimResults = true;
   recog.maxAlternatives = 1;
 
-  let buffer = '';
-  recog.onstart = ()=>{ listening=true; setTalkUI(true); setPill(true); buffer=''; };
+  recog.onstart = ()=>{ listening = true; btnVoiceOn(true); };
   recog.onresult = e=>{
-    let interim='', final='';
-    for(let i=e.resultIndex; i<e.results.length; i++){
+    let interim = '';
+    for(let i = e.resultIndex; i < e.results.length; i++){
       const r = e.results[i];
-      if(r.isFinal) final += r[0].transcript; else interim += r[0].transcript;
+      if(r.isFinal) buf += r[0].transcript;
+      else interim += r[0].transcript;
     }
-    if(interim) $('#talkLabel').textContent = interim.slice(-8) || '我在听……';
-    if(final){
-      buffer += final;
-      $('#talkLabel').textContent = '说完了';
-      const t = buffer.trim();
-      buffer='';
-      stopRecog();
-      if(t){ addMsg(t, 'me'); respond(t); }
-    }
+    const live = (buf + interim).trim();
+    if(live) setLabel('…' + live.slice(-8));
+    armSilence();
   };
   recog.onerror = e=>{
-    listening=false; setTalkUI(false);
-    if(e.error==='not-allowed' || e.error==='service-not-allowed'){
-      paused = true; setPill(false); toast('麦克风没打开，可以点下面的卡片');
-      cfg.hands=false; saveCfg(); syncToggles();
-    }else if(e.error==='no-speech'){
-      if(cfg.hands && !paused) scheduleResume(1200);
+    listening = false; btnVoiceOn(false);
+    if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+      toast('要允许一次麦克风才能说话');
+      openHelp();
     }
   };
   recog.onend = ()=>{
-    listening=false; setTalkUI(false);
-    if(cfg.hands && !paused && $('#s-chat').classList.contains('active')) scheduleResume(1000);
+    listening = false; btnVoiceOn(false);
+    clearTimeout(silenceT);
+    flush();
   };
 }
-let resumeTimer=null, restartFails=0;
+
+/* 3.2 秒没出声，就当他讲完了，自动送出 */
+function armSilence(){
+  clearTimeout(silenceT);
+  silenceT = setTimeout(()=>{ if(listening){ try{ recog.stop(); }catch(e){} } }, 3200);
+}
+
+function flush(){
+  const t = buf.trim(); buf = '';
+  if(!t) return;
+  addMsg(t, 'me');
+  respond(t);
+}
+
+function listenNow(force){
+  if(!recogSupported){ openHelp(); return; }
+  if(window.speechSynthesis && speechSynthesis.speaking && !force){ scheduleResume(600); return; }
+  if(force){ try{ speechSynthesis.cancel(); }catch(e){} }
+  clearTimeout(resumeTimer); clearTimeout(silenceT);
+  paused = false;
+  if(listening){ armSilence(); return; }
+  try{ recog.start(); }
+  catch(err){
+    try{ recog.abort(); }catch(_){}
+    setTimeout(()=>{ try{ recog.start(); }catch(_){} }, 130);
+  }
+}
+
+function stopListen(){
+  clearTimeout(silenceT);
+  try{ if(recog && listening) recog.stop(); }catch(e){}
+}
+
 function scheduleResume(ms){
   clearTimeout(resumeTimer);
-  resumeTimer = setTimeout(()=>{ if(!listening && !paused && cfg.hands) startRecog(); }, ms);
+  resumeTimer = setTimeout(()=>{ if(!listening && !paused && cfg.hands && window.__chatOpen()) listenNow(false); }, ms);
 }
-function startRecog(){
-  if(!recogSupported){ toast('这台设备不支持语音输入，请点下面的卡片'); return; }
-  if(listening) return;
-  // 正在朗读时不抢麦，避免把自己的声音当成人说话
-  if(window.speechSynthesis && window.speechSynthesis.speaking){
-    scheduleResume(700);
-    return;
-  }
-  if(restartFails >= 4){
-    paused = true; setPill(false);
-    toast('语音暂时用不了，可以点下面的卡片，或让家人帮忙');
-    return;
-  }
-  try{
-    recog.start();
-    setTimeout(()=>{ if(listening) restartFails = 0; }, 1200);
-  }catch(e){ restartFails++; scheduleResume(2000); }
-}
-function stopRecog(){ try{ recog && recog.stop(); }catch(e){} listening=false; setTalkUI(false); }
 
-function setTalkUI(on){
-  const b=$('#btnTalk');
-  b.classList.toggle('rec', on);
-  $('#talkLabel').textContent = on ? '我在听……' : '按一下，说话';
+function bindTalk(){
+  const b = document.getElementById('btnTalk');
+  if(!b) return;
+  const down = ev=>{
+    ev.preventDefault();
+    if(!recogSupported){ openHelp(); return; }
+    if(holding) return;
+    holding = true; pressAt = Date.now();
+    btnVoiceOn(true); setLabel('我在 听 …'); vibrate(18);
+    listenNow(true);
+  };
+  const up = ev=>{
+    if(!holding) return;
+    holding = false;
+    const dur = Date.now() - pressAt;
+    // 手抖轻轻一碰也算"我要说话"，不打断他
+    if(dur < 320){ setLabel('我在 听 …'); setHint('慢慢讲，我在听'); armSilence(); return; }
+    btnVoiceOn(false); setLabel('好，我 记 下 了');
+    stopListen();
+  };
+  b.addEventListener('pointerdown', down);
+  b.addEventListener('pointerup', up);
+  b.addEventListener('pointercancel', up);
+  b.addEventListener('pointerleave', up);
+  b.addEventListener('keydown', e=>{ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); down(e); } });
+  b.addEventListener('keyup',   e=>{ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); up(e); } });
+  b.addEventListener('contextmenu', e=>e.preventDefault());
 }
-function setPill(on){
-  $('#listenPill').classList.toggle('off', !on);
-  $('#listenTxt').textContent = on ? '我在听 · 点此暂停' : '已暂停 · 点此继续';
-  $('#liveDot').style.background = on ? '#C24B3A' : '#C9BFB0';
+
+function openHelp(){
+  const h = document.getElementById('helper');
+  if(h){ h.hidden = false; }
 }
 
 /* ---------------- 界面：相册 ---------------- */
@@ -1072,28 +1120,34 @@ function show(id){
   $$('.screen').forEach(s=>s.classList.toggle('active', s.id===id));
   if(id==='s-album') renderAlbum();
   if(id==='s-care') renderLog();
-  if(id!=='s-chat'){ stopRecog(); clearTimeout(silenceTimer); }
+  if(id!=='s-chat'){ stopListen(); clearTimeout(silenceTimer); }
 }
 function startChat(){
   show('s-chat');
   if($('#thread').children.length===0){
-    const open = {d:`{C}来啦，{T}。我坐只块陪汝。`, m:`{C}来啦，{T}。我坐这儿陪你。`};
-    const o = {d: fill(open.d), m: fill(open.m)};
-    addMsg('', 'you', o); speak(o.m);
+    lastDetected = 'dialect';
+    const d1 = fill('{T}！我{C}来啦。汝食饱未？');
+    const m1 = fill('{T}！我{C}来啦。你吃过了吗？');
+    addMsg('', 'you', { main: d1, sub: m1 });
+    speak(toAccent(m1));            // 一按接听就开口，不等
+    if(!cfg.speak) scheduleResume(1600);
     setTimeout(()=>{
       const it = pick('greet');
-      if(it){ addMsg('', 'you', {d:fill(it.d), m:fill(it.m)}); speak(fill(it.m)); }
+      if(it){
+        const dd = fill(it.d), mm = fill(it.m);
+        addMsg('', 'you', { main: dd, sub: mm });
+        speak(toAccent(mm));
+        if(!cfg.speak) scheduleResume(1600);
+      }
       resetSilence();
-      if(recogSupported){ if(!paused) scheduleResume(900); }
-      else toast('这台设备不支持语音输入，请点下面的卡片');
-    }, 1500);
+    }, 2800);
   }else{
     resetSilence();
     if(recogSupported && !paused) scheduleResume(700);
   }
 }
 function endChat(){
-  stopRecog(); clearTimeout(silenceTimer);
+  stopListen(); clearTimeout(silenceTimer);
   const today = new Date().toDateString();
   const n = log.filter(x=>new Date(x.t).toDateString()===today && x.who==='me').length;
   $('#sumTurns').textContent = n;
@@ -1104,16 +1158,21 @@ function endChat(){
 /* ---------------- 事件绑定 ---------------- */
 $('#avStart').innerHTML = avatarSVG(190);
 $('#btnAnswer').onclick = ()=>{ startChat(); };
-$('#btnTalk').onclick = ()=>{
-  if(!recogSupported){ toast('这台设备不支持语音输入，请点下面的卡片'); return; }
-  if(listening){ stopRecog(); paused=true; setPill(false); }
-  else { paused=false; setPill(true); startRecog(); }
-};
-$('#listenPill').onclick = ()=>{
-  if(paused || !listening){ paused=false; restartFails=0; setPill(true); startRecog(); }
-  else { paused=true; stopRecog(); setPill(false); }
-};
+bindTalk();
 $('#alertBar').onclick = ()=>{ $('#alertBar').hidden = true; };
+$('#btnHelp').onclick = ()=>{
+  const h = $('#helper');
+  h.hidden = !h.hidden;
+  if(!h.hidden) $('#typeBox').focus();
+};
+$('#typeBox').addEventListener('keydown', e=>{
+  if(e.key !== 'Enter') return;
+  const v = e.target.value.trim();
+  if(!v) return;
+  e.target.value = '';
+  addMsg(v, 'me');
+  respond(v);
+});
 $('#btnAlbum').onclick = ()=>{ show('s-album'); };
 $('#btnCare').onclick  = ()=>{ show('s-care'); };
 $('#btnBack').onclick  = ()=>{ show('s-chat'); };
@@ -1124,17 +1183,11 @@ $('#iptTitle').oninput = e=>{ cfg.title = e.target.value.trim() || (cfg.name || 
 $('#iptName').oninput  = e=>{ cfg.name = e.target.value.trim(); saveCfg(); renderAlbum(); };
 $('#iptComp').oninput  = e=>{ cfg.comp  = e.target.value.trim() || '老黄'; saveCfg(); syncToggles(); };
 $('#selRate').onchange = e=>{ cfg.rate = parseFloat(e.target.value); saveCfg(); };
-$('#langChip').onclick = ()=>{
-  cfg.lang = cfg.lang==='auto' ? 'dialect' : (cfg.lang==='dialect' ? 'mandarin' : 'auto');
-  saveCfg(); syncToggles(); updateLangChip();
-  toast(cfg.lang==='auto' ? '自动：跟着他说的语言走'
-      : (cfg.lang==='dialect' ? '用潮阳话回他' : '用普通话回他'));
-};
 $('#selLang').onchange = e=>{ cfg.lang = e.target.value; saveCfg(); updateLangChip(); };
 $('#selVoice').onchange = e=>{ cfg.voiceURI = e.target.value; saveCfg(); populateVoices(); if(cfg.voiceURI) speak(cfg.title + '，你好，我是' + cfg.comp + '。'); };
 $('#tgAccent').onclick = ()=>{ cfg.accent=!cfg.accent; saveCfg(); syncToggles(); };
 $('#tgSpeak').onclick  = ()=>{ cfg.speak=!cfg.speak; saveCfg(); syncToggles(); if(!cfg.speak && window.speechSynthesis) speechSynthesis.cancel(); };
-$('#tgHands').onclick  = ()=>{ cfg.hands=!cfg.hands; saveCfg(); syncToggles(); if(!cfg.hands) stopRecog(); };
+$('#tgHands').onclick  = ()=>{ cfg.hands=!cfg.hands; saveCfg(); syncToggles(); if(!cfg.hands) stopListen(); };
 $('#tgBig').onclick    = ()=>{ cfg.big=!cfg.big; saveCfg(); syncToggles(); };
 
 $('#iptApiUrl').oninput = e=>{ cfg.apiUrl = e.target.value.trim(); saveCfg(); };
@@ -1207,7 +1260,7 @@ syncToggles();
 updateLangChip();
 renderTitleChips();
 renderAlbum();
-if(!cfg.hands) setPill(false);
+
 window.addEventListener('beforeunload', ()=>{ try{ speechSynthesis.cancel(); }catch(e){} });
 </script>
 </body>

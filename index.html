@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBF7F0">
+<title>老黄来电话了 · 陪伴聊天</title>
+<style>
+:root{
+  --bg:#FBF7F0;
+  --panel:#FFFFFF;
+  --ink:#33291F;
+  --ink-soft:#6B5E50;
+  --ink-faint:#9A8B79;
+  --green:#47624C;
+  --green-2:#5C7A61;
+  --green-soft:#E7EDE4;
+  --clay:#B5502F;
+  --clay-soft:#FAE9E1;
+  --gold:#C9962E;
+  --line:#EAE1D3;
+  --shadow:0 6px 22px rgba(80,60,40,.10);
+  --fs-body:24px;
+  --fs-d:30px;
+  --fs-m:20px;
+  --fs-btn:28px;
+  --fs-h:30px;
+}
+.app.big{
+  --fs-body:29px;
+  --fs-d:36px;
+  --fs-m:24px;
+  --fs-btn:32px;
+  --fs-h:34px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC","Source Han Sans SC",system-ui,sans-serif;
+  font-size:var(--fs-body);
+  line-height:1.65;
+  overscroll-behavior:none;
+}
+.app{
+  max-width:780px;margin:0 auto;min-height:100dvh;
+  display:flex;flex-direction:column;
+  background:var(--bg);
+  position:relative;
+}
+/* ---------- top bar ---------- */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px 10px;gap:10px;
+  position:sticky;top:0;background:var(--bg);z-index:20;
+}
+.brand{display:flex;align-items:center;gap:10px;font-size:var(--fs-h);font-weight:700;letter-spacing:.02em}
+.dot{width:12px;height:12px;border-radius:50%;background:#7DA87F;box-shadow:0 0 0 5px rgba(125,168,127,.18)}
+.tools{display:flex;gap:8px}
+.mini{
+  font-family:inherit;font-size:calc(var(--fs-m) - 2px);
+  color:var(--ink-soft);background:#fff;border:1.5px solid var(--line);
+  border-radius:999px;padding:9px 16px;cursor:pointer;font-weight:600;
+}
+.mini:active{transform:scale(.97)}
+/* ---------- screens ---------- */
+.screen{display:none;flex:1;flex-direction:column;min-height:0}
+.screen.active{display:flex}
+/* ---------- start ---------- */
+#s-start{justify-content:center;align-items:center;padding:24px}
+.callcard{text-align:center;padding:0 8px 24px}
+.avatar-xl{width:190px;height:190px;margin:0 auto 22px;position:relative}
+.avatar-xl::after{
+  content:"";position:absolute;inset:-14px;border-radius:50%;
+  border:3px solid rgba(71,98,76,.20);animation:pulse 2.8s ease-out infinite;
+}
+@keyframes pulse{0%{transform:scale(.94);opacity:.9}70%{transform:scale(1.08);opacity:0}100%{opacity:0}}
+.calling{font-size:calc(var(--fs-h) + 10px);font-weight:800;letter-spacing:.04em}
+.calling-sub{font-size:var(--fs-body);color:var(--ink-soft);margin-top:6px}
+.answer{
+  margin:38px auto 0;display:block;
+  width:100%;max-width:420px;min-height:104px;
+  border:none;border-radius:26px;cursor:pointer;
+  background:var(--green);color:#fff;
+  font-family:inherit;font-size:calc(var(--fs-btn) + 6px);font-weight:800;letter-spacing:.28em;
+  box-shadow:0 10px 26px rgba(71,98,76,.32);
+}
+.answer:active{transform:translateY(2px) scale(.99)}
+.hint{margin-top:18px;color:var(--ink-faint);font-size:var(--fs-m)}
+/* ---------- chat ---------- */
+.thread{
+  flex:1;overflow-y:auto;padding:8px 18px 12px;
+  display:flex;flex-direction:column;gap:14px;
+  scroll-behavior:smooth;
+}
+.row{display:flex;gap:10px;align-items:flex-end;max-width:100%}
+.row.me{flex-direction:row-reverse}
+.av{width:52px;height:52px;flex:0 0 52px;border-radius:50%;overflow:hidden;background:var(--green-soft)}
+.bubble{
+  max-width:78%;padding:16px 20px;border-radius:22px;
+  background:#fff;border:1.5px solid var(--line);
+  border-bottom-left-radius:8px;
+  box-shadow:0 3px 10px rgba(90,70,50,.05);
+  animation:rise .32s cubic-bezier(.2,.9,.3,1.2) both;
+}
+@keyframes rise{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.row.me .bubble{
+  background:var(--green);color:#fff;border-color:var(--green);
+  border-bottom-left-radius:22px;border-bottom-right-radius:8px;
+}
+.dline{font-size:var(--fs-d);font-weight:700;line-height:1.55;letter-spacing:.01em}
+.mline{font-size:var(--fs-m);color:var(--ink-soft);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.row.me .mline{display:none}
+.row.me .dline{font-size:var(--fs-body);font-weight:600}
+.alertbar[hidden]{display:none}
+.alertbar{
+  cursor:pointer;
+  margin:0 18px 10px;padding:14px 18px;border-radius:16px;
+  background:var(--clay-soft);border:1.5px solid #EBC4B2;
+  color:#8E3A26;font-size:var(--fs-m);font-weight:600;
+  display:flex;align-items:center;gap:10px;
+}
+/* ---------- composer ---------- */
+.composer{padding:8px 18px 22px;background:linear-gradient(to top,var(--bg) 70%,rgba(251,247,240,0))}
+.langbar{display:flex;gap:8px;align-items:center;justify-content:center;padding:0 0 8px}
+.langchip{
+  font-family:inherit;font-size:calc(var(--fs-m) - 1px);font-weight:700;
+  padding:9px 18px;border-radius:999px;cursor:pointer;
+  background:#fff;border:1.5px solid var(--line);color:var(--green);
+}
+.langchip:active{background:var(--green-soft)}
+.langchip .arrow{opacity:.45;margin-left:6px}
+.listenpill{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  font-size:var(--fs-m);color:var(--ink-soft);
+  padding:6px 0 10px;cursor:pointer;user-select:none;
+}
+.listenpill .rec-dot{width:10px;height:10px;border-radius:50%;background:#C24B3A;animation:blink 1.3s infinite}
+.listenpill.off .rec-dot{background:#C9BFB0;animation:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.talkwrap{display:flex;gap:12px;align-items:center}
+.talk{
+  flex:1;min-height:96px;border:none;border-radius:26px;cursor:pointer;
+  font-family:inherit;font-size:var(--fs-btn);font-weight:800;letter-spacing:.06em;
+  color:#fff;background:var(--green);
+  box-shadow:0 8px 22px rgba(71,98,76,.28);
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  transition:background .2s, transform .1s;
+}
+.talk:active{transform:scale(.985)}
+.talk.rec{background:var(--clay);box-shadow:0 8px 26px rgba(181,80,47,.36)}
+.talk.rec .mic{animation:blink 1s infinite}
+.mic{width:26px;height:26px;flex:0 0 26px}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.chip{
+  font-family:inherit;font-size:var(--fs-m);font-weight:700;
+  padding:12px 18px;border-radius:999px;cursor:pointer;
+  background:#fff;border:1.5px solid var(--line);color:var(--ink);
+}
+.chip:active{background:var(--green-soft)}
+.chip.on{background:var(--green);color:#fff;border-color:var(--green)}
+.endlink{
+  display:block;width:100%;margin-top:14px;padding:10px;
+  background:none;border:none;font-family:inherit;
+  font-size:var(--fs-m);color:var(--ink-faint);cursor:pointer;
+}
+/* ---------- album ---------- */
+.pad{padding:6px 18px 30px}
+.pageTitle{font-size:var(--fs-h);font-weight:800;margin:6px 0 4px}
+.pageSub{color:var(--ink-soft);font-size:var(--fs-m);margin-bottom:18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{
+  background:#fff;border:1.5px solid var(--line);border-radius:20px;
+  padding:18px 16px;min-height:170px;display:flex;flex-direction:column;gap:8px;
+  box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.card.lock{background:#F4EFE6;border-style:dashed;box-shadow:none;align-items:center;justify-content:center}
+.card .ico{font-size:38px;line-height:1}
+.card .nm{font-weight:800;font-size:var(--fs-body)}
+.card .dd{font-size:var(--fs-m);color:var(--ink-soft);line-height:1.5}
+.card.lock .nm{color:var(--ink-faint);font-weight:600}
+.card.new{animation:pop .6s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes pop{from{opacity:0;transform:scale(.85) translateY(14px)}to{opacity:1;transform:none}}
+/* ---------- care ---------- */
+.field{background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:14px}
+.field label{display:block;font-size:var(--fs-m);color:var(--ink-soft);font-weight:700;margin-bottom:8px}
+.field input[type=text],.field select{
+  width:100%;font-family:inherit;font-size:var(--fs-body);
+  padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);
+  background:#FDFBF7;color:var(--ink);
+}
+.row2{display:flex;gap:12px}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.switch .txt{font-size:var(--fs-body);font-weight:600}
+.tg{
+  width:70px;height:40px;border-radius:999px;background:#DCD3C5;border:none;position:relative;
+  cursor:pointer;flex:0 0 70px;transition:background .2s;
+}
+.tg::after{content:"";position:absolute;top:4px;left:4px;width:32px;height:32px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.tg.on{background:var(--green)}
+.tg.on::after{left:34px}
+.logbox{max-height:320px;overflow-y:auto;font-size:var(--fs-m);line-height:1.7;color:var(--ink-soft)}
+.logbox .li{padding:8px 0;border-bottom:1px dashed var(--line)}
+.logbox .li b{color:var(--ink)}
+.note{font-size:calc(var(--fs-m) - 1px);color:var(--ink-faint);line-height:1.75}
+.note ul{padding-left:1.2em;margin:8px 0}
+.btnrow{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+.btn{
+  font-family:inherit;font-size:var(--fs-m);font-weight:700;
+  padding:14px 20px;border-radius:14px;cursor:pointer;
+  border:1.5px solid var(--line);background:#fff;color:var(--ink);
+}
+.btn.pri{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.warn{background:var(--clay-soft);color:#8E3A26;border-color:#EBC4B2}
+/* ---------- summary ---------- */
+.sumcard{
+  margin:auto;background:#fff;border:1.5px solid var(--line);border-radius:26px;
+  padding:34px 26px;text-align:center;box-shadow:var(--shadow);max-width:460px;
+}
+.sumnum{font-size:56px;font-weight:800;color:var(--green);line-height:1.1}
+.sumlabel{font-size:var(--fs-m);color:var(--ink-soft);margin-bottom:22px}
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;left:50%;bottom:120px;transform:translateX(-50%) translateY(20px);
+  background:var(--green);color:#fff;padding:14px 24px;border-radius:999px;
+  font-size:var(--fs-m);font-weight:700;opacity:0;pointer-events:none;
+  transition:all .35s;z-index:80;box-shadow:0 8px 24px rgba(0,0,0,.16);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (max-width:460px){
+  :root{--fs-body:22px;--fs-d:26px;--fs-m:19px;--fs-btn:25px;--fs-h:26px}
+  .bubble{max-width:84%}
+  .grid{grid-template-columns:1fr}
+  .topbar{padding:12px 12px 8px}
+  .brand{font-size:22px;letter-spacing:0}
+  .brand .dot{width:10px;height:10px;box-shadow:0 0 0 4px rgba(125,168,127,.18)}
+  .mini{padding:8px 13px;font-size:16px}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <header class="topbar">
+    <div class="brand"><span class="dot" id="liveDot"></span><span id="brandTxt">老黄来电话了</span></div>
+    <div class="tools">
+      <button class="mini" id="btnAlbum">相册</button>
+      <button class="mini" id="btnCare">家属</button>
+    </div>
+  </header>
+
+  <!-- ============ 开始 ============ -->
+  <section class="screen active" id="s-start">
+    <div class="callcard">
+      <div class="avatar-xl" id="avStart"></div>
+      <div class="calling" id="callName">老黄 来电</div>
+      <div class="calling-sub" id="callSub">老战友，等汝很久了</div>
+      <button class="answer" id="btnAnswer">接听</button>
+      <div class="hint">点一下就好，慢慢来</div>
+    </div>
+  </section>
+
+  <!-- ============ 聊天 ============ -->
+  <section class="screen" id="s-chat">
+    <div class="thread" id="thread" aria-live="polite"></div>
+    <div class="alertbar" id="alertBar" hidden>
+      <span>⚠</span><span id="alertTxt">家属请到身边看看</span>
+      <span style="margin-left:auto;opacity:.65;font-weight:400">点此关闭</span>
+    </div>
+    <div class="composer">
+      <div class="langbar">
+        <button class="langchip" id="langChip">潮阳话</button>
+      </div>
+      <div class="listenpill" id="listenPill"><span class="rec-dot"></span><span id="listenTxt">我在听 · 点此暂停</span></div>
+      <div class="talkwrap">
+        <button class="talk" id="btnTalk">
+          <svg class="mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/>
+          </svg>
+          <span id="talkLabel">按一下，说话</span>
+        </button>
+      </div>
+      <div class="chips" id="chips"></div>
+      <button class="endlink" id="btnEnd">今日就聊到这</button>
+    </div>
+  </section>
+
+  <!-- ============ 相册 ============ -->
+  <section class="screen" id="s-album">
+    <div class="pad">
+      <div class="pageTitle" id="albumTitle">回忆相册</div>
+      <div class="pageSub" id="albumSub">已收集 0 / 8 张</div>
+      <div class="grid" id="albumGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============ 家属 ============ -->
+  <section class="screen" id="s-care">
+    <div class="pad">
+      <div class="pageTitle">家属设置</div>
+      <div class="pageSub">这里的调整只影响本机浏览器，不会上传任何数据。</div>
+
+      <div class="field"><label>患者姓名</label>
+        <input type="text" id="iptName" placeholder="黄秋盛"></div>
+
+      <div class="field"><label>他习惯被叫作</label>
+        <input type="text" id="iptTitle" placeholder="秋盛 / 排长 / 首长 / 老黄">
+        <div class="chips" id="titleChips" style="margin-top:10px"></div>
+      </div>
+
+      <div class="field"><label>陪聊的人叫什么</label>
+        <input type="text" id="iptComp" placeholder="老黄"></div>
+
+      <div class="field"><label>朗读速度</label>
+        <select id="selRate">
+          <option value="0.65">很慢</option>
+          <option value="0.8" selected>慢</option>
+          <option value="0.95">正常</option>
+        </select></div>
+
+      <div class="field">
+        <label>回复用哪种话</label>
+        <select id="selLang">
+          <option value="auto">跟着他说（自动识别）</option>
+          <option value="dialect">潮阳话</option>
+          <option value="mandarin">普通话</option>
+        </select>
+        <label style="margin-top:14px">声音</label>
+        <select id="selVoice"><option value="">正在读取本机音色…</option></select>
+        <div class="note" id="voiceHint" style="margin-top:10px"></div>
+      </div>
+
+      <div class="field switch"><span class="txt">普通话带潮汕口音</span><button class="tg on" id="tgAccent"></button></div>
+      <div class="field switch"><span class="txt">朗读出声</span><button class="tg on" id="tgSpeak"></button></div>
+      <div class="field switch"><span class="txt">免提续听（说完自动重新听）</span><button class="tg on" id="tgHands"></button></div>
+      <div class="field switch"><span class="txt">字更大</span><button class="tg" id="tgBig"></button></div>
+
+      <div class="field">
+        <label>智能对话（可选 · 需自备接口）</label>
+        <div class="note" style="margin-bottom:10px">不填也能用：默认是本地规则引擎，断网可用。填了之后对话更活，但需要联网。<b>安全报警始终由本地判定，不受影响。</b></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <input type="text" id="iptApiUrl" placeholder="接口地址，如 https://api.openai.com/v1/chat/completions">
+          <input type="text" id="iptModel" placeholder="模型名，如 gpt-4o-mini">
+          <input type="text" id="iptKey" placeholder="密钥（只存在这台设备的浏览器里）">
+        </div>
+        <div class="btnrow"><button class="btn" id="btnTestLLM">测试一下</button></div>
+      </div>
+
+      <div class="field">
+        <label>今日对话记录</label>
+        <div class="logbox" id="logBox"></div>
+        <div class="btnrow">
+          <button class="btn pri" id="btnExport">导出记录</button>
+          <button class="btn warn" id="btnClear">清空今天</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>使用须知</label>
+        <div class="note">
+          <ul>
+            <li><b>不是医疗器械。</b>它不能诊断、治疗或替代照护与就医。</li>
+            <li><b>不纠正、不争辩。</b>采用验证疗法：顺着他的叙述走，把话题引向安全与温暖。他说"有人来了"，页面会回"请他坐，我倒茶"——这叫作治疗性虚构，是照护里的常规做法。</li>
+            <li><b>不主动提已故亲人。</b>涉及家人一律用问句（"老伴近来好无？"），不作断言，避免引发哀伤与错认。</li>
+            <li><b>红色提示＝立刻到身边。</b>出现疼痛、走失、极度恐惧、自伤言语时会亮红并记录，请先安抚，不要追问"你还记得吗"。</li>
+            <li><b>认话的原理。</b>他开口后，页面会按用词判断是潮汕话还是普通话（「汝、厝、孥、伊、食饱」这类词出现就判为方言），右上角的语言条会显示判断结果，点它也能手动锁定。<b>说话人识别用的是浏览器自带的普通话识别</b>，纯潮汕话口音可能被转成不准确的文字——这时用底部的大卡片让他点，或者您替他打字。<b>潮汕话以文字呈现。</b>浏览器没有潮汕话合成语音，朗读用的是普通话；方言是口语记音，潮阳各镇用字略有差异，可自行改词。</li>
+            <li><b>隐私。</b>页面不录音、不上传、不保存音频；对话文字只存在本机浏览器。语音识别由浏览器调用系统/云端服务完成，完全离线时请改用下方快捷卡片或让家人打字。</li>
+          </ul>
+        </div>
+      </div>
+      <button class="btn" id="btnBack">返回</button>
+    </div>
+  </section>
+
+  <!-- ============ 小结 ============ -->
+  <section class="screen" id="s-sum">
+    <div class="sumcard">
+      <div class="sumnum" id="sumTurns">0</div>
+      <div class="sumlabel">今天说了这么多话</div>
+      <div class="sumnum" id="sumCards">0</div>
+      <div class="sumlabel">收进相册的回忆</div>
+      <button class="answer" id="btnAgain" style="letter-spacing:.1em;font-size:var(--fs-btn)">再聊一会</button>
+    </div>
+  </section>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* =========================================================
+   老黄来电话了 —— 老年痴呆中后期陪伴聊天
+   设计原则：验证疗法 / 无失败 / 无计时 / 大字号 / 语音优先
+   ========================================================= */
+
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+const KEY = { cfg:'ec_cfg_v1', log:'ec_log_v1', card:'ec_card_v1' };
+
+let cfg = Object.assign({
+  title:'秋盛', comp:'老黄', name:'黄秋盛', rate:0.8,
+  lang:'auto', accent:true, voiceURI:'',
+  speak:true, hands:true, big:false,
+  apiUrl:'', model:'', apiKey:''
+}, JSON.parse(localStorage.getItem(KEY.cfg) || '{}'));
+
+let log = JSON.parse(localStorage.getItem(KEY.log) || '[]');
+let unlocked = new Set(JSON.parse(localStorage.getItem(KEY.card) || '[]'));
+let usedIds = new Set();
+let listening = false, paused = false, recog = null, recogSupported = false;
+let turns = 0, silenceTimer = null, lastSpeakAt = 0;
+
+const saveCfg  = () => localStorage.setItem(KEY.cfg, JSON.stringify(cfg));
+const saveLog  = () => { if(log.length>300) log = log.slice(-300); localStorage.setItem(KEY.log, JSON.stringify(log)); };
+const saveCard = () => localStorage.setItem(KEY.card, JSON.stringify([...unlocked]));
+
+/* ---------------- 内容库 ----------------
+   每条 = 一个完整的说话轮次：方言 + 普通话
+   方言用潮阳口语记音，{T}=他的称呼  {C}=陪聊人  {E}=复述他的话
+------------------------------------------- */
+const POOLS = {
+  greet:[
+    {d:'{T}，汝好。我正来，坐坐。', m:'{T}，你好。我刚到，坐坐。'},
+    {d:'食饱未？日头暖，出来晒晒。', m:'吃过了吗？太阳暖，出来晒晒。'},
+    {d:'老兄弟，几日无见，汝面色真好。', m:'老兄弟，几天没见，你气色真好。'},
+    {d:'我坐只块，汝慢慢讲，无急。', m:'我坐这儿，你慢慢讲，不急。'}
+  ],
+  army:[
+    {d:'想起只阵，天未光就出操，汝带头跑第一，无人跟会着。', m:'想起那时候，天没亮就出操，你带头跑第一，没人跟得上。', c:'army'},
+    {d:'拉练许日，行到脚底起泡，汝一句话无讲，还背两个新兵。', m:'拉练那天，走到脚底起泡，你一句话没说，还背了两个新兵。'},
+    {d:'汝穿军装真挺，腰直直，像一支枪。全连看着汝。', m:'你穿军装真挺，腰直直的，像一支枪。全连都看着你。'},
+    {d:'打靶许日，十发十中，团长拍手，我在旁边看着欢喜。', m:'打靶那天，十发十中，团长拍手，我在旁边看着高兴。'},
+    {d:'站岗到半夜，风大，汝来查哨，给我披件衫。', m:'站岗到半夜，风大，你来查哨，给我披了件衣服。'},
+    {d:'汝带兵有量，骂是骂，饭还是给逐个食饱。', m:'你带兵有分寸，该骂就骂，饭还是让每个人吃饱。'},
+    {d:'退伍许日，逐个目眶红红，汝无哭，只是手一直捏着帽。', m:'退伍那天，大家眼睛都红，你没哭，只是手一直捏着帽子。'}
+  ],
+  home:[
+    {d:'棉城的老街，早市闹热，粿条汤一碗落去，成身暖。', m:'棉城的老街，早市热闹，一碗粿条汤下肚，全身都暖。', c:'tower'},
+    {d:'文光塔还站许块，日头落来，照过练江面。', m:'文光塔还站在那里，太阳落下来，照过练江水面。'},
+    {d:'正月英歌舞，锣鼓一响，后生仔跳到面红红。汝细汉有跳无？', m:'正月英歌舞，锣鼓一响，小伙子跳到满脸通红。你小时候跳过吗？', c:'yingge'},
+    {d:'海门莲花峰，海风咸咸，拜妈祖的人排到路口。', m:'海门莲花峰，海风咸咸的，拜妈祖的人排到路口。', c:'sea'},
+    {d:'祠堂前拜老爷，三牲摆好，香一插，心就定。', m:'祠堂前拜老爷，三牲摆好，香一插，心就定了。'},
+    {d:'练江边的风，暗时吹来，带点咸味，也带点厝内的味。', m:'练江边的风，晚上吹来，带点咸味，也带点家里的味道。'},
+    {d:'汝条巷还在，石板路磨到光光，行过去有声音。', m:'你那条巷子还在，石板路磨得光光的，走过去有声音。'}
+  ],
+  food:[
+    {d:'冲壶工夫茶，三只杯，慢慢食，无事。', m:'冲一壶工夫茶，三个杯，慢慢喝，没事。', c:'tea'},
+    {d:'牛肉丸弹起来会跳，蘸一点沙茶，正合味。', m:'牛肉丸弹起来会跳，蘸一点沙茶，正对味。'},
+    {d:'蚝烙煎到边皮焦，菜脯粒一撒，芳到厝内都是。', m:'蚝烙煎到边皮焦，菜脯粒一撒，香得满屋都是。', c:'food'},
+    {d:'卤鹅切一碟，配碗白粥，食到饱饱。', m:'卤鹅切一碟，配碗白粥，吃到饱。'},
+    {d:'粿条汤撒把芹菜珠，早起食一碗，成日有力。', m:'粿条汤撒把芹菜珠，早上吃一碗，整天有力气。'}
+  ],
+  family:[
+    {d:'孥仔有来无？逐个拢挂念汝。', m:'孩子们有来吗？个个都惦记你。'},
+    {d:'老嬷近来好无？汝两侬相扶持几十年。', m:'老伴近来好吗？你们俩相互扶持几十年。'},
+    {d:'孙仔读到佗位了？汝讲来我听。', m:'孙子读到哪了？你说给我听。'},
+    {d:'厝内有人来坐，就闹热。汝欢喜无？', m:'家里有人来坐，就热闹。你高兴吗？'}
+  ],
+  self:[
+    {d:'汝讲的，我拢记着。汝细汉蹛佗位？', m:'你说的，我都记着。你小时候住哪儿？'},
+    {d:'按呢。汝后生时上爱做啥？', m:'是这样。你年轻时最喜欢做什么？'},
+    {d:'好岁寿。汝一生行真远的路。头一句最想讲啥？', m:'好年岁。你一辈子走了很远的路。第一句最想说什么？'},
+    {d:'汝的名，我记住。厝内人拢按怎叫汝？', m:'你的名字，我记住了。家里人都怎么叫你？'}
+  ],
+  confab:[
+    {d:'有人来？好啊，请伊坐，我倒茶。', m:'有人来？好啊，请他坐，我倒茶。', c:'comrade'},
+    {d:'伊是哪一个？看样子是老兄弟。', m:'他是哪一位？看样子是老兄弟。'},
+    {d:'汝同伊呾，我在只块陪汝，免惊。', m:'你跟他说，我在这儿陪你，不用怕。'},
+    {d:'许个人穿军装？应该是老战友，汝替我同伊问好。', m:'那个人穿军装？应该是老战友，你替我问他好。'},
+    {d:'厝内闹热真好。汝头前同伊讲了啥？', m:'家里热闹真好。你刚才跟他说了什么？'},
+    {d:'伊坐久未？我再去倒杯茶。', m:'他坐久了吗？我再去倒杯茶。'},
+    {d:'伊要走了？汝送送伊，我等人客下回再来。', m:'他要走了？你送送他，我等客人下回再来。'}
+  ],
+  distress:[
+    {d:'我在只块，无事。汝慢慢呾，我听得着。', m:'我在这，没事。你慢慢说，我听得见。'},
+    {d:'免惊，我陪着汝。手给我，慢慢喘口气。', m:'别怕，我陪着你。手给我，慢慢喘口气。'},
+    {d:'心内艰苦就讲出来，我无走。', m:'心里难受就说出来，我不走。'},
+    {d:'汝无孤，我在。', m:'你不孤单，我在。'},
+    {d:'无相干，无相干。我坐低低，陪汝。', m:'没关系，没关系。我坐低一点，陪你。'}
+  ],
+  pain:[
+    {d:'佗位艰苦？先坐下，莫紧，我叫人来看。', m:'哪里难受？先坐下，别急，我叫人来看看。'},
+    {d:'头眩就慢慢倒落去，我扶汝。', m:'头晕就慢慢躺下，我扶你。'},
+    {d:'手按只块，喘口气。我倒杯温水汝。', m:'手按这儿，喘口气。我倒杯温水给你。'}
+  ],
+  song:[
+    {d:'我唱句汝听：天顶一粒星，地下开书斋……', m:'我唱一句你听：天上一颗星，地下开书斋……', c:'song'},
+    {d:'我是一个兵，来自老百姓……汝也会唱无？', m:'我是一个兵，来自老百姓……你也会唱吗？'},
+    {d:'锣鼓一响，英歌槌敲起来，汝心内是不是也跟咧跳？', m:'锣鼓一响，英歌槌敲起来，你心里是不是也跟着跳？'}
+  ],
+  weather:[
+    {d:'今日天时好，日头暖暖，风细细。', m:'今天天气好，太阳暖暖的，风细细的。'},
+    {d:'落雨了，厝内坐，食杯茶正合适。', m:'下雨了，家里坐，喝杯茶正合适。'},
+    {d:'暗了，天时凉，加件衫。', m:'天黑了，凉，加件衣服。'}
+  ],
+  yes:[
+    {d:'好，我听汝的。', m:'好，我听你的。'},
+    {d:'着，汝讲得对。', m:'对，你说得对。'},
+    {d:'好，按汝讲的来。', m:'好，按你说的来。'}
+  ],
+  no:[
+    {d:'无要紧，慢慢来，我等着。', m:'没关系，慢慢来，我等着。'},
+    {d:'唔知就唔知，无相干，我侬食茶。', m:'不知道就不知道，没关系，我们喝茶。'},
+    {d:'汝无想讲就无讲，我坐只块就好。', m:'你不想说就不说，我坐这儿就好。'}
+  ],
+  soft:[
+    {d:'嗯……「{E}」，我听着。', m:'嗯……「{E}」，我听着。'},
+    {d:'汝慢慢呾，我无急。', m:'你慢慢说，我不急。'},
+    {d:'有影？后来呢？', m:'真的？后来呢？'},
+    {d:'汝讲的，我拢爱听。再讲多一点。', m:'你说的，我都爱听。再多讲一点。'},
+    {d:'{T}，我在听，汝继续。', m:'{T}，我在听，你继续。'},
+    {d:'哦，是按呢。汝当时心内想啥？', m:'哦，是这样。你当时心里想什么？'}
+  ],
+  silence:[
+    {d:'{T}，我还在。无要紧，歇一下。', m:'{T}，我还在。没关系，歇一下。'},
+    {d:'静静坐一会也好，我陪汝。', m:'静静坐一会儿也好，我陪你。'},
+    {d:'食口茶，慢慢来。', m:'喝口茶，慢慢来。'},
+    {d:'我在这，无走。汝想讲就讲。', m:'我在这，不走。你想说就说。'}
+  ]
+};
+
+const TOPICS = [
+  {id:'army',  w:['部队','当兵','兵','战友','连长','排长','班长','团长','司令','营长','指导','打靶','枪','站岗','哨','行军','拉练','军装','退伍','转业','军营','新兵','立功','授衔','号','出操','演习','前线','打仗']},
+  {id:'home',  w:['潮阳','潮汕','棉城','文光塔','练江','海门','莲花峰','灵山','东山','妈祖','老爷','祠堂','英歌','双忠','老家','厝','巷','乡里','汕头','拜','初一十五','塔']},
+  {id:'food',  w:['食','饭','茶','牛肉丸','蚝烙','粿','卤鹅','菜脯','鱼丸','甜汤','粥','肚','饿','饮','功夫茶','工夫茶','茶米','腐乳饼','束砂']},
+  {id:'family',w:['子','女','孙','嬷','老婆','母','父','爸','妈','兄弟','姐','妹','阿嫂','媳妇','女婿','囡','孥','家','亲人','孙仔','外孙']},
+  {id:'self',  w:['我名','我叫','今年','岁','生日','我今年','我姓','后生','细汉','以前我','我一生','一生']},
+  {id:'song',  w:['歌','唱','英歌','曲','听曲','潮剧','锣鼓','戏','收音机','广播','军歌']},
+  {id:'weather',w:['天','雨','冷','热','风','日头','暗','光','凉','热天','寒','落雨']},
+  {id:'distress',w:['死','想死','无意思','艰苦','难过','惊','怕','怕人','无人','没人','孤','苦','喊','哭','伤心','怨','害','打','抢','骗','钱无','走失','不知路','找不到','闷','烦']},
+  {id:'pain',  w:['痛','疼','不舒服','晕','眩','吃药','医院','医生','咳','喘','肚','头壳','脚','腰','跌','倒','麻']},
+  {id:'confab',w:['有人','伊来','来寻','来找','来找我','叫我','来看我','那个人','许个人','老战友来','外面','门口','进来说']},
+  {id:'yes',   w:['好','着','对','是','嗯','有','会','可以','要','中']},
+  {id:'no',    w:['无','不是','唔','不要','免','莫','勿','不好','不会','唔知','不知','忘了','想无','想不起来']}
+];
+
+const CARDS = [
+  {id:'army',   icon:'🎖️', nm:'出操',      d:'天未光就出操，汝带头跑第一。', m:'天没亮就出操，你带头跑第一。'},
+  {id:'tower',  icon:'🏯', nm:'文光塔',    d:'文光塔还站许块，日头落来照练江。', m:'文光塔还站在那里，太阳落下照着练江。'},
+  {id:'yingge', icon:'🥁', nm:'英歌舞',    d:'正月锣鼓一响，后生仔跳到面红红。', m:'正月锣鼓一响，小伙子跳到满脸通红。'},
+  {id:'tea',    icon:'🍵', nm:'工夫茶',    d:'三只杯，慢慢食，无事。', m:'三个杯，慢慢喝，没事。'},
+  {id:'sea',    icon:'🌊', nm:'莲花峰',    d:'海门的风咸咸，拜妈祖的人真多。', m:'海门的风咸咸的，拜妈祖的人真多。'},
+  {id:'song',   icon:'⭐', nm:'天顶一粒星', d:'天顶一粒星，地下开书斋。', m:'天上一颗星，地下开书斋。'},
+  {id:'comrade',icon:'🤝', nm:'老战友',    d:'胶己人，免客气。', m:'自己人，别客气。'},
+  {id:'food',   icon:'🍳', nm:'蚝烙',      d:'煎到边皮焦，芳到厝内都是。', m:'煎到边皮焦，香得满屋都是。'}
+];
+
+/* ---------------- 头像 ---------------- */
+function avatarSVG(size){
+  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" fill="#E7EDE4"/>
+    <circle cx="50" cy="44" r="19" fill="#E8C9A6"/>
+    <path d="M31 40c0-11 8.5-19 19-19s19 8 19 19c0 0-6-6-19-6s-19 6-19 6z" fill="#5C7A61"/>
+    <path d="M28 42c4-1 8-1 10 0M62 42c2-1 6-1 10 0" stroke="#5C7A61" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="43" cy="45" r="2.2" fill="#3B2E24"/><circle cx="57" cy="45" r="2.2" fill="#3B2E24"/>
+    <path d="M44 54c2 2.4 8 2.4 10 0" stroke="#B5836A" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <path d="M18 100c0-17 14-27 32-27s32 10 32 27z" fill="#47624C"/>
+    <path d="M42 74h16l-3 9H45z" fill="#F3EADF"/>
+  </svg>`;
+}
+
+/* ---------------- 说话（TTS） ---------------- */
+let voices = [];
+function loadVoices(){ voices = window.speechSynthesis ? speechSynthesis.getVoices() : []; }
+if(window.speechSynthesis){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+
+/* =========================================================
+   语言层：普通话 / 潮汕话（潮阳腔）自动识别与呈现
+   ========================================================= */
+const DIALECT_CUES = ['汝','厝','孥','呾','伊','胶己','按呢','只块','许块','佗位','侬','糜',
+  '物件','头先','暗暝','无变','好食','食饱','咱','逐个','细汉','后生','落来','转去','毋',
+  '唔','欲','莫','乜','晒','厝内','老嬷'];
+const MANDARIN_CUES = ['的','是','了','我们','你们','他们','这个','那个','什么','怎么','因为','所以','已经','没有'];
+
+let lastDetected = 'dialect';
+
+function detectLang(text){
+  const t = String(text || '');
+  let s = 0;
+  for(const w of DIALECT_CUES){ if(t.includes(w)) s += 3; }
+  for(const w of MANDARIN_CUES){ if(t.includes(w)) s -= 1; }
+  if(/[食厝孥汝伊]/.test(t)) s += 1;
+  return s >= 3 ? 'dialect' : 'mandarin';
+}
+
+function resolveLang(){
+  if(cfg.lang === 'dialect' || cfg.lang === 'mandarin') return cfg.lang;
+  return lastDetected;
+}
+
+function langLabel(){
+  if(cfg.lang === 'auto') return '自动·' + (lastDetected === 'dialect' ? '潮阳话' : '普通话');
+  return cfg.lang === 'dialect' ? '潮阳话' : '普通话';
+}
+
+function updateLangChip(){
+  const el = document.getElementById('langChip');
+  if(el) el.innerHTML = langLabel() + '<span class="arrow">▾</span>';
+}
+
+/* 潮汕腔普通话：用词与语气词上带一点本地味道，读出来就不像播音员 */
+const ACCENT_TAILS = ['啦。','咯。','咧。','嘛。','啦。'];
+function toAccent(m){
+  if(!cfg.accent || !m) return m;
+  let t = String(m)
+    .replace(/不知道/g,'不懂')
+    .replace(/什么/g,'啥')
+    .replace(/为什么/g,'怎样')
+    .replace(/怎么办/g,'怎样办')
+    .replace(/没关系/g,'没事');
+  if(/[？?]$/.test(t)) return t;
+  if(/。$/.test(t)) t = t.slice(0,-1) + ACCENT_TAILS[Math.floor(Math.random()*ACCENT_TAILS.length)];
+  return t;
+}
+
+/* 每一句都留一个口子让他能接话——中后期患者最需要"好回答的问题" */
+const ASK_PAIRS = [
+  ['汝讲落去？','你继续说？'],
+  ['是按呢无？','是这样吗？'],
+  ['汝看好无？','你看好吗？'],
+  ['许当时汝心内按怎想？','那时候你心里怎么想的？'],
+  ['逐个拢知影无？','大家都知道吗？']
+];
+function ensureAsk(item){
+  const all = (item.d || '') + (item.m || '');
+  if(/[？?]/.test(all)) return item;
+  const p = ASK_PAIRS[Math.floor(Math.random()*ASK_PAIRS.length)];
+  return { d: (item.d||'') + p[0], m: (item.m||'') + p[1], c: item.c };
+}
+
+/* ===== 2. 音色：优先真人男声 ===== */
+function zhVoices(){
+  return (voices || []).filter(v =>
+    /^(zh|cmn)/i.test(v.lang || '') || /Chinese|中文|普通话|國語|国语|Mandarin/i.test(v.name || ''));
+}
+function pickVoice(){
+  const zh = zhVoices();
+  if(!zh.length) return null;
+  if(cfg.voiceURI){ const v = zh.find(x => x.voiceURI === cfg.voiceURI); if(v) return v; }
+  const male = zh.filter(v => /(Yunjian|Yunxi|Yunyang|Yunye|Yunfeng|Yunhao|Yunze|Kangkang|云健|云希|云扬|云野|云枫|云皓|云泽|康康|男|Male)/i.test(v.name || ''));
+  const natural = male.filter(v => /(Natural|Online|Neural)/i.test(v.name || ''));
+  if(natural.length) return natural[0];
+  if(male.length) return male[0];
+  return zh[0];
+}
+function populateVoices(){
+  const sel = document.getElementById('selVoice');
+  if(!sel) return;
+  const zh = zhVoices();
+  const cur = cfg.voiceURI || '';
+  sel.innerHTML = '<option value="">自动挑（优先真人男声）</option>' +
+    zh.map(v => `<option value="${v.voiceURI}">${v.name} · ${v.lang}</option>`).join('');
+  sel.value = cur && zh.some(v=>v.voiceURI===cur) ? cur : '';
+  const best = pickVoice();
+  const hint = document.getElementById('voiceHint');
+  if(!hint) return;
+  if(!best){ hint.innerHTML = '这台设备没有中文语音，朗读暂时用不了，文字照常显示。'; return; }
+  const isNeural = /(Natural|Online|Neural)/i.test(best.name || '');
+  hint.innerHTML = `现在用的是 <b>${esc(best.name)}</b>。` + (isNeural
+    ? '这是接近真人的音色。'
+    : '这是基础音色，听着偏机械——<b>换用 Edge 打开同一页，能选到「云健」「云希」这类真人男声；手机上装 Edge 或「语音包」也可以。</b>');
+}
+
+function speak(text){
+  if(!cfg.speak || !window.speechSynthesis || !text) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN'; u.rate = cfg.rate; u.pitch = 0.85; u.volume = 1;
+    const v = pickVoice();
+    if(v) u.voice = v;
+    lastSpeakAt = Date.now();
+    u.onend = u.onerror = ()=>{
+      if(cfg.hands && !paused && window.__chatOpen()) scheduleResume(700);
+    };
+    speechSynthesis.speak(u);
+  }catch(e){
+    if(cfg.hands && !paused && window.__chatOpen()) scheduleResume(900);
+  }
+}
+window.__chatOpen = ()=> document.getElementById('s-chat').classList.contains('active');
+
+/* ---------------- 提示 ---------------- */
+let toastTimer=null;
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* ---------------- 解锁回忆卡 ---------------- */
+function unlockCard(id){
+  if(!id || unlocked.has(id)) return;
+  unlocked.add(id); saveCard();
+  const c = CARDS.find(x=>x.id===id);
+  if(c) toast('收进相册：' + c.nm);
+  chime();
+  renderAlbum();
+}
+let actx=null;
+function chime(){
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(), g=actx.createGain();
+    o.type='sine'; o.frequency.value=880;
+    g.gain.setValueAtTime(0.0001, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.05, actx.currentTime+0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime+0.55);
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime+0.6);
+  }catch(e){}
+}
+
+/* ---------------- 渲染消息 ---------------- */
+function fill(str, echo){
+  return str.replace(/\{T\}/g, cfg.title).replace(/\{C\}/g, cfg.comp).replace(/\{E\}/g, echo||'');
+}
+function addMsg(text, who, extra){
+  const row = document.createElement('div');
+  row.className = 'row' + (who==='me' ? ' me' : '');
+  const av = document.createElement('div');
+  av.className='av'; av.innerHTML = avatarSVG(52);
+  const b = document.createElement('div');
+  b.className='bubble';
+  if(who==='me'){
+    b.innerHTML = `<div class="dline">${esc(text)}</div>`;
+  }else{
+    const it = extra || { main:text, sub:'' };
+    const main = (it.main !== undefined) ? it.main : (it.d || '');
+    const sub  = (it.sub  !== undefined) ? it.sub  : (it.m || '');
+    b.innerHTML = `<div class="dline">${esc(main)}</div>` + (sub ? `<div class="mline">${esc(sub)}</div>` : '');
+  }
+  row.appendChild(av); row.appendChild(b);
+  $('#thread').appendChild(row);
+  scrollDown();
+  return row;
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function scrollDown(){ const t=$('#thread'); requestAnimationFrame(()=>{ t.scrollTop = t.scrollHeight; }); }
+
+/* ---------------- 核心：理解与回应 ---------------- */
+function scoreTopic(text){
+  let best=null, bestN=0;
+  for(const t of TOPICS){
+    let n=0;
+    for(const w of t.w){ if(text.includes(w)) n += w.length>1 ? 2 : 1; }
+    if(n>bestN){ bestN=n; best=t.id; }
+  }
+  return bestN>0 ? best : null;
+}
+function pick(pool, text){
+  const arr = POOLS[pool]; if(!arr || !arr.length) return null;
+  let fresh = arr.filter(x=>!usedIds.has(pool+'|'+x.d));
+  if(!fresh.length){ usedIds.clear(); fresh = arr; }
+  // 语义贴近度：他说的话里有哪些字/词，回话里也有，就更优先
+  let bestPool = fresh;
+  if(text){
+    const scored = fresh.map(x=>({x, s: affinity(x, text)}));
+    const max = Math.max(...scored.map(o=>o.s));
+    if(max > 0) bestPool = scored.filter(o=>o.s === max).map(o=>o.x);
+  }
+  const item = bestPool[Math.floor(Math.random()*bestPool.length)];
+  usedIds.add(pool+'|'+item.d);
+  return item;
+}
+function affinity(item, text){
+  const d = item.d || '', m = item.m || '';
+  let s = 0;
+  for(let i=0;i<text.length-1;i++){
+    const bg = text.slice(i, i+2);
+    if(d.includes(bg) || m.includes(bg)) s += 3;
+  }
+  for(const ch of new Set(text)){
+    if(/[\u4e00-\u9fa5]/.test(ch) && (d.includes(ch) || m.includes(ch))) s += 1;
+  }
+  return s;
+}
+function echoFragment(text){
+  const clean = String(text).replace(/[，。！？、,.!?…\s~～]/g,'');
+  return clean.length>10 ? clean.slice(-9) : clean;
+}
+
+let lastAlertAt = 0;
+function flagCaregiver(kind, text){
+  $('#alertBar').hidden = false;
+  $('#alertTxt').textContent = `家属请到身边看看（${kind}）· ${new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}`;
+  lastAlertAt = Date.now();
+  $('.app').classList.add('alerting');
+  try{ chime(); }catch(e){}
+  log.push({t:Date.now(), who:'alert', text:kind+'：'+text});
+  saveLog(); renderLog();
+}
+
+/* ---------------- 可选：接入大模型 ---------------- */
+function llmSystemPrompt(){
+  return `你在扮演一位潮汕潮阳籍的退伍老兵，名叫「${cfg.comp}」，是「${cfg.title}」几十年的老战友。你们都是当兵出身，他当过军官。
+
+【最重要的规则】
+1. 你在陪伴一位阿尔茨海默病中后期的老人。绝不纠正他、绝不争辩、绝不说"你记错了""没有这回事""他已经不在了"。他说有人来了，你就顺着说"请他坐，我倒茶"。
+2. 不主动提起可能已经过世的亲人、不追问"你还记得吗"、不考他。
+3. 每句话只讲一件小事，一到两句，不超过 40 个字。老人听不了长句。
+4. 每句结尾尽量带一个很轻的问题，让他还能开口。
+5. 语气像老兄弟：慢、稳、暖。不要感叹号堆砌，不要说教。
+6. 他提到疼痛、害怕、走失、想死，先安抚："我在，免惊，我陪着汝。"
+7. 他说的话可以是乱的，你永远顺着接，往安全、温暖、老家和部队的方向引。
+
+【说话方式】
+输出必须是 JSON：{"d":"潮汕话（用口语汉字写，参考：汝=你、载=知道、厝=家、食=吃、无=不、孥仔=孩子、好=行、正=才）","m":"对应的普通话"}
+只输出 JSON，不要别的。`;
+}
+
+async function llmReply(userText){
+  if(!cfg.apiKey || !cfg.apiUrl) return null;
+  const hist = log.filter(x=>x.who!=='alert').slice(-8).map(x=>({
+    role: x.who==='me' ? 'user' : 'assistant',
+    content: x.text
+  }));
+  const ctl = new AbortController();
+  const timer = setTimeout(()=>ctl.abort(), 7000);
+  try{
+    const res = await fetch(cfg.apiUrl, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.apiKey},
+      body: JSON.stringify({
+        model: cfg.model || 'gpt-4o-mini',
+        temperature: 0.85,
+        max_tokens: 160,
+        messages: [{role:'system', content: llmSystemPrompt()}, ...hist, {role:'user', content:userText}]
+      }),
+      signal: ctl.signal
+    });
+    clearTimeout(timer);
+    if(!res.ok) return null;
+    const data = await res.json();
+    let txt = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+    txt = txt.trim().replace(/^```(?:json)?/,'').replace(/```$/,'').trim();
+    try{
+      const o = JSON.parse(txt);
+      if(o && (o.d || o.m)) return { d: String(o.d||o.m), m: String(o.m||o.d) };
+    }catch(e){}
+    return txt ? { d: txt, m: txt } : null;
+  }catch(e){
+    clearTimeout(timer);
+    return null;
+  }
+}
+
+async function respond(userText){
+  const txt = String(userText||'').trim();
+  if(!txt) return;
+
+  turns++;
+  log.push({t:Date.now(), who:'me', text:txt});
+  saveLog(); renderLog();
+
+  // 先认他说的是哪种话，再决定怎么回
+  lastDetected = detectLang(txt);
+  updateLangChip();
+
+  // 1) 情绪困扰优先（本地判定，不让模型漏掉）
+  if(/(死|想死|无意思|艰苦|难过|惊|怕|孤|哭|伤心|走失|不知路|找不到|抢|骗|打人)/.test(txt)){
+    const it = pick('distress', txt);
+    say(it); flagCaregiver('情绪', txt); return;
+  }
+  // 2) 身体不适
+  if(/(痛|疼|不舒服|晕|眩|喘|跌|倒|医院|医生|吃药)/.test(txt)){
+    const it = pick('pain', txt);
+    say(it); flagCaregiver('身体', txt); return;
+  }
+
+  // 3) 若配了大模型，先问它
+  if(cfg.apiKey && cfg.apiUrl){
+    setThinking(true);
+    const r = await llmReply(txt);
+    setThinking(false);
+    if(r && r.d){ say(r); return; }
+  }
+
+  // 4) 说有人来了 / 对空说话 —— 最核心的场景，优先跟进去
+  if(/(有人|来人|来找|来寻|来看我|来了|坐在|站在|门口|门外|进来|对面|床边|谁人)/.test(txt)){
+    const it = pick('confab', txt);
+    say(it); return;
+  }
+
+  // 5) 话题匹配
+  const tp = scoreTopic(txt);
+  const map = {army:'army', home:'home', food:'food', family:'family', song:'song', weather:'weather', confab:'confab', yes:'yes', no:'no', self:'self'};
+  if(tp && map[tp] && Math.random() < 0.9){
+    const it = pick(map[tp], txt);
+    say(it); return;
+  }
+
+  // 6) 兜底：复述 + 温和承接
+  const it = pick('soft', txt);
+  if(it){
+    say(it, echoFragment(txt));
+    return;
+  }
+  say({d:'我在。', m:'我在。'});
+}
+
+function say(item, echo){
+  if(!item) return;
+  item = ensureAsk(item);
+  const lang = resolveLang();
+  const dTxt = fill(item.d || item.m || '', echo);
+  const mTxt = fill(item.m || item.d || '', echo);
+  const shown = (lang === 'dialect')
+    ? { main: dTxt, sub: mTxt }      // 潮阳话大字 + 普通话小字
+    : { main: mTxt, sub: '' };       // 纯普通话
+  setTimeout(()=>{
+    if(listening) stopRecog();
+    addMsg('', 'you', shown);
+    if(item.c) unlockCard(item.c);
+    resetSilence();
+    if(cfg.speak && window.speechSynthesis){ speak(toAccent(mTxt)); }
+    else if(cfg.hands && !paused && window.__chatOpen()){ scheduleResume(1400); }
+  }, 420);
+}
+
+function resetSilence(){
+  clearTimeout(silenceTimer);
+  silenceTimer = setTimeout(()=>{
+    if(!$('#s-chat').classList.contains('active')) return;
+    const it = pick('silence');
+    if(it){ addMsg('', 'you', {d:fill(it.d), m:fill(it.m)}); speak(fill(it.m)); resetSilence(); }
+  }, 52000);
+}
+
+/* ---------------- 语音识别 ---------------- */
+function initRecog(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ recogSupported=false; return; }
+  recogSupported = true;
+  recog = new SR();
+  recog.lang = 'zh-CN';
+  recog.continuous = false;
+  recog.interimResults = true;
+  recog.maxAlternatives = 1;
+
+  let buffer = '';
+  recog.onstart = ()=>{ listening=true; setTalkUI(true); setPill(true); buffer=''; };
+  recog.onresult = e=>{
+    let interim='', final='';
+    for(let i=e.resultIndex; i<e.results.length; i++){
+      const r = e.results[i];
+      if(r.isFinal) final += r[0].transcript; else interim += r[0].transcript;
+    }
+    if(interim) $('#talkLabel').textContent = interim.slice(-8) || '我在听……';
+    if(final){
+      buffer += final;
+      $('#talkLabel').textContent = '说完了';
+      const t = buffer.trim();
+      buffer='';
+      stopRecog();
+      if(t){ addMsg(t, 'me'); respond(t); }
+    }
+  };
+  recog.onerror = e=>{
+    listening=false; setTalkUI(false);
+    if(e.error==='not-allowed' || e.error==='service-not-allowed'){
+      paused = true; setPill(false); toast('麦克风没打开，可以点下面的卡片');
+      cfg.hands=false; saveCfg(); syncToggles();
+    }else if(e.error==='no-speech'){
+      if(cfg.hands && !paused) scheduleResume(1200);
+    }
+  };
+  recog.onend = ()=>{
+    listening=false; setTalkUI(false);
+    if(cfg.hands && !paused && $('#s-chat').classList.contains('active')) scheduleResume(1000);
+  };
+}
+let resumeTimer=null, restartFails=0;
+function scheduleResume(ms){
+  clearTimeout(resumeTimer);
+  resumeTimer = setTimeout(()=>{ if(!listening && !paused && cfg.hands) startRecog(); }, ms);
+}
+function startRecog(){
+  if(!recogSupported){ toast('这台设备不支持语音输入，请点下面的卡片'); return; }
+  if(listening) return;
+  // 正在朗读时不抢麦，避免把自己的声音当成人说话
+  if(window.speechSynthesis && window.speechSynthesis.speaking){
+    scheduleResume(700);
+    return;
+  }
+  if(restartFails >= 4){
+    paused = true; setPill(false);
+    toast('语音暂时用不了，可以点下面的卡片，或让家人帮忙');
+    return;
+  }
+  try{
+    recog.start();
+    setTimeout(()=>{ if(listening) restartFails = 0; }, 1200);
+  }catch(e){ restartFails++; scheduleResume(2000); }
+}
+function stopRecog(){ try{ recog && recog.stop(); }catch(e){} listening=false; setTalkUI(false); }
+
+function setTalkUI(on){
+  const b=$('#btnTalk');
+  b.classList.toggle('rec', on);
+  $('#talkLabel').textContent = on ? '我在听……' : '按一下，说话';
+}
+function setPill(on){
+  $('#listenPill').classList.toggle('off', !on);
+  $('#listenTxt').textContent = on ? '我在听 · 点此暂停' : '已暂停 · 点此继续';
+  $('#liveDot').style.background = on ? '#C24B3A' : '#C9BFB0';
+}
+
+/* ---------------- 界面：相册 ---------------- */
+function renderAlbum(){
+  const g=$('#albumGrid'); if(!g) return;
+  g.innerHTML='';
+  CARDS.forEach(c=>{
+    const on = unlocked.has(c.id);
+    const el=document.createElement('div');
+    el.className='card'+(on?'':' lock');
+    if(on){
+      const isDia = resolveLang() === 'dialect';
+      el.innerHTML = `<div class="ico">${c.icon}</div>
+        <div class="nm">${esc(c.nm)}</div>
+        <div class="dd">${esc(isDia ? c.d : c.m)}</div>`;
+      el.onclick=()=>{ speak(c.m); };
+    }else{
+      el.innerHTML = `<div class="ico" style="opacity:.25">🔒</div><div class="nm">还没想起来</div>`;
+    }
+    g.appendChild(el);
+  });
+  $('#albumTitle').textContent = (cfg.name || '他') + '的回忆相册';
+  $('#albumSub').textContent = `已收集 ${unlocked.size} / ${CARDS.length} 张`;
+}
+
+/* ---------------- 界面：家属 ---------------- */
+function renderLog(){
+  const box=$('#logBox'); if(!box) return;
+  const today = new Date().toDateString();
+  const items = log.filter(x=>new Date(x.t).toDateString()===today).slice(-80);
+  if(!items.length){ box.innerHTML='<div class="li">今天还没有记录。</div>'; return; }
+  box.innerHTML = items.map(x=>{
+    const tm = new Date(x.t).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    const who = x.who==='me' ? '他' : (x.who==='alert' ? '⚠ 提醒' : cfg.comp);
+    return `<div class="li"><b>${tm} ${who}</b>：${esc(x.text)}</div>`;
+  }).join('');
+  box.scrollTop = box.scrollHeight;
+}
+function setThinking(on){
+  const b = $('#btnTalk');
+  b.style.opacity = on ? '.55' : '1';
+  if(on) $('#talkLabel').textContent = '老黄在想……';
+}
+
+function syncToggles(){
+  $('#selLang').value = cfg.lang || 'auto';
+  $('#tgAccent').classList.toggle('on', cfg.accent);
+  $('#tgSpeak').classList.toggle('on', cfg.speak);
+  $('#tgHands').classList.toggle('on', cfg.hands);
+  $('#tgBig').classList.toggle('on', cfg.big);
+  $('#app').classList.toggle('big', cfg.big);
+  $('#iptTitle').value = cfg.title;
+  $('#iptName').value = cfg.name || '';
+  $('#iptComp').value = cfg.comp;
+  $('#selRate').value = String(cfg.rate);
+  $('#iptApiUrl').value = cfg.apiUrl || '';
+  $('#iptModel').value = cfg.model || '';
+  $('#iptKey').value = cfg.apiKey || '';
+  $('#callName').textContent = cfg.comp + ' 来电';
+  $('#callSub').textContent = '老战友，等汝很久了';
+  $('#brandTxt').textContent = cfg.comp + '来电话了';
+}
+
+/* ---------------- 流程 ---------------- */
+function show(id){
+  $$('.screen').forEach(s=>s.classList.toggle('active', s.id===id));
+  if(id==='s-album') renderAlbum();
+  if(id==='s-care') renderLog();
+  if(id!=='s-chat'){ stopRecog(); clearTimeout(silenceTimer); }
+}
+function startChat(){
+  show('s-chat');
+  if($('#thread').children.length===0){
+    const open = {d:`{C}来啦，{T}。我坐只块陪汝。`, m:`{C}来啦，{T}。我坐这儿陪你。`};
+    const o = {d: fill(open.d), m: fill(open.m)};
+    addMsg('', 'you', o); speak(o.m);
+    setTimeout(()=>{
+      const it = pick('greet');
+      if(it){ addMsg('', 'you', {d:fill(it.d), m:fill(it.m)}); speak(fill(it.m)); }
+      resetSilence();
+      if(recogSupported){ if(!paused) scheduleResume(900); }
+      else toast('这台设备不支持语音输入，请点下面的卡片');
+    }, 1500);
+  }else{
+    resetSilence();
+    if(recogSupported && !paused) scheduleResume(700);
+  }
+}
+function endChat(){
+  stopRecog(); clearTimeout(silenceTimer);
+  const today = new Date().toDateString();
+  const n = log.filter(x=>new Date(x.t).toDateString()===today && x.who==='me').length;
+  $('#sumTurns').textContent = n;
+  $('#sumCards').textContent = unlocked.size;
+  show('s-sum');
+}
+
+/* ---------------- 事件绑定 ---------------- */
+$('#avStart').innerHTML = avatarSVG(190);
+$('#btnAnswer').onclick = ()=>{ startChat(); };
+$('#btnTalk').onclick = ()=>{
+  if(!recogSupported){ toast('这台设备不支持语音输入，请点下面的卡片'); return; }
+  if(listening){ stopRecog(); paused=true; setPill(false); }
+  else { paused=false; setPill(true); startRecog(); }
+};
+$('#listenPill').onclick = ()=>{
+  if(paused || !listening){ paused=false; restartFails=0; setPill(true); startRecog(); }
+  else { paused=true; stopRecog(); setPill(false); }
+};
+$('#alertBar').onclick = ()=>{ $('#alertBar').hidden = true; };
+$('#btnAlbum').onclick = ()=>{ show('s-album'); };
+$('#btnCare').onclick  = ()=>{ show('s-care'); };
+$('#btnBack').onclick  = ()=>{ show('s-chat'); };
+$('#btnEnd').onclick   = ()=>{ endChat(); };
+$('#btnAgain').onclick = ()=>{ show('s-chat'); startChat(); };
+
+$('#iptTitle').oninput = e=>{ cfg.title = e.target.value.trim() || (cfg.name || '秋盛'); saveCfg(); renderTitleChips(); };
+$('#iptName').oninput  = e=>{ cfg.name = e.target.value.trim(); saveCfg(); renderAlbum(); };
+$('#iptComp').oninput  = e=>{ cfg.comp  = e.target.value.trim() || '老黄'; saveCfg(); syncToggles(); };
+$('#selRate').onchange = e=>{ cfg.rate = parseFloat(e.target.value); saveCfg(); };
+$('#langChip').onclick = ()=>{
+  cfg.lang = cfg.lang==='auto' ? 'dialect' : (cfg.lang==='dialect' ? 'mandarin' : 'auto');
+  saveCfg(); syncToggles(); updateLangChip();
+  toast(cfg.lang==='auto' ? '自动：跟着他说的语言走'
+      : (cfg.lang==='dialect' ? '用潮阳话回他' : '用普通话回他'));
+};
+$('#selLang').onchange = e=>{ cfg.lang = e.target.value; saveCfg(); updateLangChip(); };
+$('#selVoice').onchange = e=>{ cfg.voiceURI = e.target.value; saveCfg(); populateVoices(); if(cfg.voiceURI) speak(cfg.title + '，你好，我是' + cfg.comp + '。'); };
+$('#tgAccent').onclick = ()=>{ cfg.accent=!cfg.accent; saveCfg(); syncToggles(); };
+$('#tgSpeak').onclick  = ()=>{ cfg.speak=!cfg.speak; saveCfg(); syncToggles(); if(!cfg.speak && window.speechSynthesis) speechSynthesis.cancel(); };
+$('#tgHands').onclick  = ()=>{ cfg.hands=!cfg.hands; saveCfg(); syncToggles(); if(!cfg.hands) stopRecog(); };
+$('#tgBig').onclick    = ()=>{ cfg.big=!cfg.big; saveCfg(); syncToggles(); };
+
+$('#iptApiUrl').oninput = e=>{ cfg.apiUrl = e.target.value.trim(); saveCfg(); };
+$('#iptModel').oninput  = e=>{ cfg.model  = e.target.value.trim(); saveCfg(); };
+$('#iptKey').oninput    = e=>{ cfg.apiKey = e.target.value.trim(); saveCfg(); };
+$('#btnTestLLM').onclick = async ()=>{
+  if(!cfg.apiKey || !cfg.apiUrl){ toast('还没填接口地址或密钥'); return; }
+  toast('试着说一句……');
+  const r = await llmReply('今日天时好');
+  if(r && r.d){ toast('通了：' + r.d.slice(0,18)); }
+  else { toast('没连上，先按本地模式用着，不影响陪伴'); }
+};
+
+$('#btnExport').onclick = ()=>{
+  const today = new Date().toDateString();
+  const items = log.filter(x=>new Date(x.t).toDateString()===today);
+  const lines = [`${cfg.name || cfg.title} 的陪伴记录  ${new Date().toLocaleDateString('zh-CN')}`, ''];
+  items.forEach(x=>{
+    const tm = new Date(x.t).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    lines.push(`[${tm}] ${x.who==='me'?'他':(x.who==='alert'?'⚠ 提醒':cfg.comp)}：${x.text}`);
+  });
+  const blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `陪伴记录_${cfg.name || ''}_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+};
+$('#btnClear').onclick = ()=>{
+  if(confirm('清空今天的对话记录？相册不会清空。')){ log=[]; saveLog(); renderLog(); }
+};
+
+/* ---------------- 快捷卡片 ---------------- */
+const CHIPS = ['好', '不是', '想不起来', '有人来了', '我在部队的时候', '潮阳老家', '我想食茶', '没人陪我', '食饱了', '我想转去厝', '汝是哪一个'];
+function renderChips(){
+  const box=$('#chips'); box.innerHTML='';
+  CHIPS.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='chip'; b.textContent=t;
+    b.onclick=()=>{ addMsg(t,'me'); respond(t); };
+    box.appendChild(b);
+  });
+}
+renderChips();
+if(location.hash==='#chat'){ startChat(); }
+else if(location.hash==='#album'){ show('s-album'); unlocked.add('army'); unlocked.add('tea'); unlocked.add('yingge'); renderAlbum(); }
+else if(location.hash==='#care'){ show('s-care'); }
+
+/* ---------------- 称呼快捷切换 ---------------- */
+const TITLE_OPTS = ['秋盛', '排长', '首长', '老黄', '黄叔'];
+function renderTitleChips(){
+  const box = document.getElementById('titleChips');
+  if(!box) return;
+  box.innerHTML = '';
+  TITLE_OPTS.forEach(t=>{
+    const b = document.createElement('button');
+    b.className = 'chip' + (cfg.title === t ? ' on' : '');
+    b.textContent = t;
+    b.onclick = ()=>{ cfg.title = t; saveCfg(); syncToggles(); renderTitleChips(); toast('现在叫他：' + t); };
+    box.appendChild(b);
+  });
+}
+
+/* ---------------- 初始化 ---------------- */
+initRecog();
+if(window.speechSynthesis){
+  loadVoices(); populateVoices();
+  speechSynthesis.onvoiceschanged = ()=>{ loadVoices(); populateVoices(); };
+}
+syncToggles();
+updateLangChip();
+renderTitleChips();
+renderAlbum();
+if(!cfg.hands) setPill(false);
+window.addEventListener('beforeunload', ()=>{ try{ speechSynthesis.cancel(); }catch(e){} });
+</script>
+</body>
+</html>
